@@ -49,8 +49,8 @@ class Application(object):
         translations_dir = QLibraryInfo.location(QLibraryInfo.TranslationsPath)
         self._translator.load('qtbase_' + get_language(), translations_dir)
         self._app.installTranslator(self._translator)
-        locale.setlocale(locale.LC_ALL, 'en_US')
 
+        locale.setlocale(locale.LC_ALL, '')
         QApplication.setQuitOnLastWindowClosed(False)
 
         signal.signal(signal.SIGINT, lambda signum, stack: QCoreApplication.quit())
