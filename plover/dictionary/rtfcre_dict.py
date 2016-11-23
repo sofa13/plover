@@ -20,6 +20,7 @@ import re
 # Python 2/3 compatibility.
 from six import get_function_code
 
+from plover import log
 from plover.resource import resource_stream
 from plover.steno import normalize_steno
 from plover.steno_dictionary import StenoDictionary
@@ -335,13 +336,23 @@ def save_dictionary(d, fp):
     writer = codecs.getwriter('cp1252')(fp)
     writer.write(HEADER)
 
+    error_msg = ''
     for s, t in d.items():
         s = '/'.join(s)
         t = format_translation(t)
         entry = "{\\*\\cxs %s}%s\r\n" % (s, t)
-        writer.write(entry)
+        try:
+            writer.write(entry)
+        except Exception:
+            error_msg = error_msg + entry + "\n"
+            log.info(
+                'Error while converting dictionary entry: %s',
+                entry,
+                exc_info = True
+            )
 
     writer.write("}\r\n")
+    return error_msg
 
 def create_dictionary():
     return StenoDictionary()

@@ -328,7 +328,7 @@ class DictionariesWidget(QWidget, Ui_DictionariesWidget):
                     shutil.copyfile(filename, new_filename)
                 else:
                     open(new_filename, 'w')
-                    convert_dictionary(filename, new_filename)
+                    result = convert_dictionary(filename, new_filename)
             except Exception:
                 log.error(
                     'Error while saving new dictionary: %s',
@@ -349,3 +349,14 @@ class DictionariesWidget(QWidget, Ui_DictionariesWidget):
                     if new_filename not in self._dictionaries:
                         dictionaries.append(new_filename)
                     self._update_dictionaries(dictionaries)
+
+                entries = result.save.error_msg
+                msg = ('The following dictionary entries were not saved due to conversion errors: \n\n %s'
+                             % (entries)
+                             )
+                if entries != '':
+                    QMessageBox.information(
+                        self, 'Conversion Errors', msg,
+                        QMessageBox.Ok,
+                        QMessageBox.Ok
+                    )
