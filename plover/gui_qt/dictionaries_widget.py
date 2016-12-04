@@ -354,7 +354,7 @@ class DictionariesWidget(QWidget, Ui_DictionariesWidget):
                     self._update_dictionaries(dictionaries)
 
                 try:
-                    entries = result.save.failed_entries
+                    failed_entries = result.save.failed_entries
                 except:
                     log.error(
                         'Error while retrieving converting message: %s',
@@ -362,12 +362,12 @@ class DictionariesWidget(QWidget, Ui_DictionariesWidget):
                         exc_info=True
                     )
                 else:
-                    if entries != None:
-                        failed_entries = ''
-                        for item in entries:
-                            failed_entries = failed_entries + '\n\n' + item[0] + item[1]
+                    if len(failed_entries) != 0:
+                        failed_entries_formatted = ''
+                        for item in failed_entries:
+                            failed_entries_formatted = failed_entries_formatted + '\n\n' + item[0] + item[1]
                         msg = ('The following dictionary entries were not saved due to conversion errors: %s'
-                               % (failed_entries)
+                               % (failed_entries_formatted)
                                )
                         MyCustomDialog(msg).exec()
 
