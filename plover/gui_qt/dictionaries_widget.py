@@ -12,12 +12,15 @@ from PyQt5.QtCore import (
     pyqtSignal,
 )
 from PyQt5.QtWidgets import (
+    QDialog,
     QFileDialog,
     QTableWidgetItem,
     QWidget,
     QMenu,
     QAction,
-    QMessageBox
+    QMessageBox,
+    QFormLayout,
+    QPlainTextEdit
 )
 
 from plover import log
@@ -350,13 +353,30 @@ class DictionariesWidget(QWidget, Ui_DictionariesWidget):
                         dictionaries.append(new_filename)
                     self._update_dictionaries(dictionaries)
 
-                entries = result.save.error_msg
-                msg = ('The following dictionary entries were not saved due to conversion errors: \n\n %s'
-                             % (entries)
-                             )
-                if entries != '':
-                    QMessageBox.information(
-                        self, 'Conversion Errors', msg,
-                        QMessageBox.Ok,
-                        QMessageBox.Ok
+                try:
+                    entries = result.save.failed_entries
+                except:
+                    log.error(
+                        'Error while retrieving converting message: %s',
+                        result,
+                        exc_info=True
                     )
+                else:
+                    if entries != None:
+                        failed_entries = ''
+                        for item in entries:
+                            failed_entries = failed_entries + '\n\n' + item[0] + item[1]
+                        msg = ('The following dictionary entries were not saved due to conversion errors: %s'
+                               % (failed_entries)
+                               )
+                        MyCustomDialog(msg).exec()
+
+class MyCustomDialog(QDialog):
+    def __init__(self, msg):
+        super(MyCustomDialog, self).__init__()
+        self.setWindowTitle('Conversion Errors')
+        form_layout = QFormLayout()
+        self.tape = QPlainTextEdit(msg)
+        self.tape.setReadOnly(True)
+        form_layout.addWidget(self.tape)
+        self.setLayout(form_layout)

@@ -336,15 +336,15 @@ def save_dictionary(d, fp):
     writer = codecs.getwriter('cp1252')(fp)
     writer.write(HEADER)
 
-    error_msg = ''
+    failed_entries = []
     for s, t in d.items():
         s = '/'.join(s)
         t = format_translation(t)
         entry = "{\\*\\cxs %s}%s\r\n" % (s, t)
         try:
             writer.write(entry)
-        except Exception:
-            error_msg = error_msg + entry + "\n"
+        except UnicodeEncodeError:
+            failed_entries.append((entry, _('Plover does not support Unicode characters in RTF')))
             log.info(
                 'Error while converting dictionary entry: %s',
                 entry,
@@ -352,7 +352,8 @@ def save_dictionary(d, fp):
             )
 
     writer.write("}\r\n")
-    return error_msg
+    return failed_entries
 
 def create_dictionary():
     return StenoDictionary()
+
