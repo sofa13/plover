@@ -359,10 +359,11 @@ class DictionaryEditor(QDialog, Ui_DictionaryEditor, WindowState):
 
     ROLE = 'dictionary_editor'
 
-    def __init__(self, engine, dictionary_paths, parent=None):
+    def __init__(self, engine, dictionary_paths, save_merge_as, parent=None):
         super(DictionaryEditor, self).__init__(parent)
         self.setupUi(self)
         self._engine = engine
+        self.save_merge_as = save_merge_as
         with engine:
             dictionary_list = [
                 dictionary
@@ -387,6 +388,8 @@ class DictionaryEditor(QDialog, Ui_DictionaryEditor, WindowState):
         self.table.resizeColumnToContents(4)
         self.table.setItemDelegate(DictionaryItemDelegate(dictionary_list))
         self.table.selectionModel().selectionChanged.connect(self.on_selection_changed)
+        self.table.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(self._row_selector)
         headers = self.table.horizontalHeader()
         headers.setContextMenuPolicy(Qt.CustomContextMenu)
         headers.customContextMenuRequested.connect(self._column_selector)
@@ -569,3 +572,23 @@ class DictionaryEditor(QDialog, Ui_DictionaryEditor, WindowState):
             self._engine.dictionaries.save(dictionary.get_path()
                                            for dictionary
                                            in self._model.modified)
+
+    def _row_selector(self, pos):
+        menu = QMenu()
+
+        action = QAction('Merge As...', self)
+        action.triggered.connect(self._merge_as)
+        menu.addAction(action)
+
+        menu.exec(self.table.viewport().mapToGlobal(pos))
+
+    def _merge_as(self):
+        selection = self._selection
+        file_name = self.save_merge_as(merge=True)
+        dictionary = expand_path(file_name)
+        for index in selection:
+            strokes = self._model._entries[index].strokes
+            translation = self._model._entries[index].translation
+            if strokes and translation:
+                self._engine.add_translation(strokes, translation,
+                                             dictionary=dictionary)

@@ -27,7 +27,7 @@ from plover.misc import shorten_path
 from plover.gui_qt.dictionaries_widget_ui import Ui_DictionariesWidget
 from plover.gui_qt.dictionary_editor import DictionaryEditor
 from plover.gui_qt.utils import ToolBar
-from plover.dictionary.base import convert_dictionary
+from plover.dictionary.base import convert_dictionary,create_dictionary
 
 
 class DictionariesWidget(QWidget, Ui_DictionariesWidget):
@@ -206,7 +206,7 @@ class DictionariesWidget(QWidget, Ui_DictionariesWidget):
     def _edit(self, dictionaries):
         if self._editor is not None:
             self._editor.close()
-        self._editor = DictionaryEditor(self._engine, dictionaries, None)
+        self._editor = DictionaryEditor(self._engine, dictionaries, self._save_as, None)
         def on_finished():
             if self._editor:
                 self._editor.destroy()
@@ -302,10 +302,16 @@ class DictionariesWidget(QWidget, Ui_DictionariesWidget):
             file_directory = 'file://%s' % file_directory
         webbrowser.open(file_directory)
 
-    def _save_as(self):
+    def _save_as(self, merge=False):
         filename = [self._dictionaries[item.row()]
                         for item in self.table.selectedItems()][0]
         file_ext = os.path.splitext(filename)[-1].lower()
+
+        if merge:
+            dialog_filename = os.path.dirname(filename)
+        else:
+            dialog_filename = filename
+
         if file_ext in dictionary_formats:
             selected_filter = '%s Dictionary (*%s)' % (
                 file_ext.upper().strip('.'), file_ext)
@@ -314,7 +320,7 @@ class DictionariesWidget(QWidget, Ui_DictionariesWidget):
             ext.upper().strip('.'), ext) for ext in dictionary_formats)
 
         new_filename = QFileDialog.getSaveFileName(
-            self, _('Save Dictionary As...'), filename,
+            self, _('Save Dictionary As...'), dialog_filename,
             filters, selected_filter
         )[0]
 
@@ -324,11 +330,16 @@ class DictionariesWidget(QWidget, Ui_DictionariesWidget):
             new_ext = os.path.splitext(new_filename)[-1].lower()
 
             try:
-                if file_ext == new_ext:
-                    shutil.copyfile(filename, new_filename)
-                else:
+                if merge:
                     open(new_filename, 'w')
-                    convert_dictionary(filename, new_filename)
+                    new_dictionary = create_dictionary(new_filename)
+                    new_dictionary.save()
+                else:
+                    if file_ext == new_ext:
+                        shutil.copyfile(filename, new_filename)
+                    else:
+                        open(new_filename, 'w')
+                        convert_dictionary(filename, new_filename)
             except Exception:
                 log.error(
                     'Error while saving new dictionary: %s',
@@ -349,3 +360,5 @@ class DictionariesWidget(QWidget, Ui_DictionariesWidget):
                     if new_filename not in self._dictionaries:
                         dictionaries.append(new_filename)
                     self._update_dictionaries(dictionaries)
+                print(file_name)
+                return file_name
